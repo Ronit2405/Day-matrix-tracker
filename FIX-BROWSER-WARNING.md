@@ -1,175 +1,205 @@
-# Chrome ka "Dangerous site" warning — kya hai, kyun hai, aur kaise theek hoga
+# Chrome / Google Safe Browsing warning — verified diagnosis and action plan
 
-> **TL;DR** — Aapke page ke code mein koi problem nahi hai. Google Safe Browsing ne poore host `ronit2405.github.io` par verdict laga rakha hai ("some pages on this site are unsafe"). Isi wajah se aapka naya tracker bhi block ho raha hai. Fix = (1) Google ko review request bhejo, (2) host par jo bhi page deceptive lag sakta hai use offline karo, (3) review ke dauraan app ko doosre host par chala lo.
-
----
-
-## 1. Pehle confirm karo ki warning kahan se aa rahi hai
-
-Do minute ka test:
-
-1. Site **Incognito** window mein kholo (`Ctrl+Shift+N`).
-2. Ek **doosre device** (phone) par mobile data se kholo.
-3. Ek doosra browser (Firefox / Edge) try karo.
-
-- **Sab jagah warning** → ye Google Safe Browsing ka host-level verdict hai (99% case yahi hai, aur isi doc ka baaki hissa usi ke liye hai).
-- **Sirf aapke Chrome mein** → local cache/extension ka issue. Chrome settings → Privacy → "Clear browsing data" → cached images and files. Phir dekho.
-
-Aapke case mein ye host-level verdict hai — neeche proof hai.
+**TL;DR (Hinglish):** Is repo ke code mein kuch galat nahi mila — maine poora audit kiya. Warning **host-level** hai: Google Safe Browsing ne `ronit2405.github.io` (poore shared host) par verdict `3` = *"some pages on this site are unsafe"* laga rakha hai. Is page ko badal ke warning nahi hata sakte — **Sirf Google hi hata sakta hai**, review request se. Neeche ready-to-send report text hai.
 
 ---
 
-## 2. Proof: problem page ka code nahi, host ki reputation hai
+## 1. Verified verdict (checked 11 Nov 2026)
 
-Google ka public Safe Browsing status endpoint (`transparencyreport.google.com`), aur uske codes:
+Google's public Safe Browsing status endpoint, raw responses:
 
-| Code | Matlab |
+| Query | Raw response | Code | Meaning |
+|---|---|---|---|
+| `example.com` | `[["sb.ssr",1,false,false,false,...]]` | `1` | No unsafe content (control) |
+| `testsafebrowsing.appspot.com` (Google's own malware test host) | `[["sb.ssr",3,true,true,...]]` | `3` | Some pages unsafe (control) |
+| `github.com` | `[["sb.ssr",4,false,false,false,...]]` | `4` | No site-level verdict (control) |
+| **`ronit2405.github.io`** | `[["sb.ssr",3,false,false,true,false,false,...]]` | **3** | **Some pages on this site are unsafe** |
+| `ronit2405.github.io/Day-matrix-tracker` | `[["sb.ssr",3,false,false,true,false,false,...]]` | **3** | Same host-level verdict |
+
+Endpoint used:
+
+```
+https://transparencyreport.google.com/transparencyreport/api/v3/safebrowsing/status?site=ronit2405.github.io
+```
+
+Code reference: `1` = no unsafe content, `2` = this site is unsafe, `3` = **some pages on this site are unsafe**, `4` = no site-level verdict, `5` = hosts files not commonly downloaded, `6` = no data.
+
+**What this proves:**
+
+- Verdict is **identical for the bare host and for this project's path** → the finding is on `ronit2405.github.io`, not on `Day-matrix-tracker` specifically. All repos served from `<username>.github.io` share one host, so one flagged page downgrades every project on it.
+- In the flags, **malware = false, unwanted software = false, social-engineering / deceptive content = true**. Google's classifier thinks something on this host *looks like a trick* — not that it serves malware.
+
+> Google can change or clear a verdict only through a review. No edit to `index.html` can move this number. That is the whole point of this document.
+
+---
+
+## 2. This repo's audit — clean
+
+What was checked and found (all files, 11 Nov 2026):
+
+| Check | Result |
 |---|---|
-| `1` | No unsafe content found (safe) |
-| `2` | This site is unsafe |
-| `3` | **Some pages on this site are unsafe** |
-| `6` | No data available |
+| External scripts, CDN, fonts, analytics, iframes, pixels | **None.** Zero outbound network references; the only `http(s)` strings in the page are its own `<link rel=canonical>` and the SVG namespace URI |
+| `<form>`, password / email / OTP / payment / card / file inputs | **None** — every input is `text`, `date`, `checkbox`, `select`, `textarea` inside no form element |
+| `eval`, `new Function`, `atob`, `String.fromCharCode`, obfuscated JS | **None** |
+| Redirects (`location.href/assign/replace`), `window.open`, downloads, `Content-Disposition` tricks | **None** |
+| `fetch` / `XMLHttpRequest` / `WebSocket` / `sendBeacon` / service worker | **None** |
+| Permissions used | **None** — no geolocation, camera, microphone, clipboard *read*, notifications. Clipboard *write* only when the user presses "Copy" |
+| Storage | `localStorage` key `dmt_v1` only. No cookies, no IndexedDB |
+| CSP (enforced via `<meta http-equiv>`) | `default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'` — the page **cannot** load or POST anything external |
+| Backend | None. GitHub Pages serves static files only |
 
-Actual readings (11 Nov 2026):
+Runtime check (jsdom, headless) on all three tabs: set 48 slots, urgent/important flags, mood, rating, notes, add days, backup, restore, reset, theme cycle — **0 console errors, 0 network requests**.
 
-| URL | Code | Verdict |
+**Conclusion: this project contains no phishing, malware, unwanted software or deceptive content.** Nothing here explains the warning, and nothing here can legitimately be "fixed" to remove it.
+
+---
+
+## 3. Actual likely cause: the shared host
+
+Every page published on `ronit2405.github.io` inherits one reputation. Audited the other published repos:
+
+| Repo | What's there | Risk signal |
 |---|---|---|
-| `example.com` | `1` | safe |
-| `hakimel.github.io`, `mrdoob.github.io`, `sindresorhus.github.io`, `jekyll.github.io` | `1` | safe |
-| ek host jo exist hi nahi karta | `6` | no data |
-| Google ka official malware test page | `2` | unsafe |
-| **`ronit2405.github.io`** | **`3`** | **some pages unsafe** |
-| `ronit2405.github.io/Day-matrix-tracker/` | `3` | same host-level verdict |
-| `ronit2405.github.io/myResumeDemo/` | `3` | same |
-| `ronit2405.github.io/SGT/` | `3` | same |
-| `ronit2405.github.io/sgt-stock/` | `3` | same |
-| `ronit2405.github.io/Pooja-boutique-Management-/` | `3` | same |
-| `ronit2405.github.io/silent-sos-app/` | `3` | same |
-| `ronit2405.github.io/silent-sos-single-file/` | `3` | same |
+| **`silent-sos-app`**, **`silent-sos-single-file`** (Pages: **ON**) | "Silent SOS — Emergency Alert Demo (Calculator UI)" — a **working calculator that hides an emergency-alert UI** behind a secret code (type `112` then `=`, or long-press `AC`) | ⚠️ **Strongest match for "deceptive / social engineering".** The page's own purpose is a disguised interface. It also requests **geolocation** and builds `wa.me` / `maps.google.com` links with the visitor's number and location. Whatever the intent, a disguised UI + location capture + third-party send links is exactly the pattern Google's classifier is built to catch. |
+| `websolutions-studio` | Portfolio with a "Test Login Details / Login ID" block (Pages currently off) | ⚠️ Login-looking content on a host with no login |
+| `Pooja-boutique-Management-` | Next.js app with **no `index.html`** at repo root → its Pages URL serves a "File not found" page | Noise, not a safety signal |
+| `SGT`, `sgt-stock` | Firebase stock demo; `SGT/` has no root `index.html` (site is at `/SGT/sgt3/`), loads Firebase from `gstatic.com` with a **placeholder** config | Clean, but broken links |
+| `myResumeDemo` (Pages: ON) | Resume with lorem ipsum | Clean |
+| `Day-matrix-tracker` (this repo) | This app | **Clean** (section 2) |
 
-Do baatein isse clear ho jaati hain:
+**Google search has no idea which of your pages the flag is on.** The endpoint only says "some pages". The way to find the exact URL is Search Console's Security Issues report (section 5, Step B).
 
-- Verdict **har path par same** hai → ye `Day-matrix-tracker` ke folder ka issue nahi, **poore `ronit2405.github.io` host** ka hai. `username.github.io` par saare repos ek hi host share karte hain, isliye ek page ka flag baaki sab par lag jata hai. (Yahi GitHub community threads mein bhi likha hai.)
-- Detail flags: **malware = false, phishing/deceptive = true** → Google ko koi *deceptive* (phishing-jaisa) content mila hai, malware nahi.
-
-### Aapke tracker page ka audit (clean hai)
-
-- Koi external script, CDN, font, analytics, iframe, pixel — **kuch nahi**. Zero network calls.
-- Koi form, login, password field, OTP, payment field — **nahi**. App kabhi koi credential maangta hi nahi.
-- Koi redirect, koi download, koi obfuscated JS (`eval` / `atob` / `\x` escapes) — **nahi**.
-- Data sirf `localStorage` mein, browser ke andar.
-- Total: ek HTML file — HTML + CSS + chhota inline JS.
-
-Iska matlab: **is page ko change karke warning hataana possible nahi hai.** Verdict host par hai, is page par nahi.
+> **Separate real issue, unrelated to Safe Browsing:** `Pooja-boutique-Management-` has a committed `.env` file. Rotate whatever is in it and remove it from the repo/history regardless of this warning. (Checked: it is not reachable through Pages, since the Pages root has no app entry point.)
 
 ---
 
-## 3. To culprit kaun hai? (aapke host ke suspects)
+## 4. What was changed in this repo (and why it does *not* fix the warning)
 
-Maine saare 11 public repos scan kiye. Kisi mein bhi password form, obfuscated JS ya external redirect nahi mila — lekin teen cheezein Safe Browsing ke "deceptive site" classifier ko trigger kar sakti hain:
+While auditing, one genuine weakness was found **in this repo's own code** — not a phishing vector, but a self-inflicted one: the app writes user data into `innerHTML` and trusted the shape of the backup text / `localStorage` blob. A crafted "Restore from text" payload could inject markup, and a malformed-but-valid backup could break rendering (a `null` day name threw and left a blank screen).
 
-1. **`silent-sos-app` + `silent-sos-single-file`** — *"Silent SOS — Emergency Alert Demo (Calculator UI)"*. Design se hi ek **disguised app** hai: calculator dikhta hai, andar SOS chalta hai. Deceptive-UI classifiers ke liye ye sabse strong candidate hai. 👈 **sabse pehle isko dekho**
-2. **`websolutions-studio`** — portfolio mein *"Test Login Details / Login ID"* block hai. Abhi iska Pages off hai, lekin agar pehle on tha to Google ke index mein login-jaisi cheez gayi hogi.
-3. **Koi purana / delete kiya hua page** — Google index se turant nahi hatta. Aapne agar koi repo ya page delete kiya hai jo ab 404 hai, to flag usi purane URL ka ho sakta hai.
+Hardening applied to `index.html`:
 
-Note: `Assignment3` mein ek `<form action="#">` hai (back-end nahi, harmless) — forms safe hote hain, but review ke dauraan simple rakhna behtar hai.
+- New `day()` / `norm()` sanitizers validate the whole state on **load** and on **restore**: unknown fields dropped, `u`/`i` limited to `Y`/`N`, slot indices limited to `0–47`, `rating` clamped to `0–10`, `theme` limited to `''`/`light`/`dark`, `date` must be `YYYY-MM-DD`, duplicate day ids de-duplicated, non-object days tolerated.
+- Remaining interpolations escaped (`d.date`, day ids in option values and row `data-id`).
+- Restore now re-renders immediately instead of leaving stale DOM.
+
+Verified after the change: crafted payloads render **0 injected elements and 0 executed handlers**; corrupt JSON, wrong-shape blobs and legacy backups all still load cleanly; every existing feature (slots, bulk set, mood, rating, notes, multi-day, backup/restore, reset, theme) still passes with 0 console errors. Bonus: the in-page CSP already blocks `src`/`href` exfiltration, so even the old code could not have leaked data off-origin.
+
+⚠️ **Be clear about this:** this hardening makes the app better and removes anything a reviewer could point at, but it **cannot** change the code-`3` verdict, because the verdict is on the host and the flags are deceptive-content flags, not code-quality flags.
 
 ---
 
-## 4. Fix — step by step
+## 5. How the warning actually gets removed
 
-### Step A · Google ko report karo (2 minute, sabse zaroori)
+### Step A — Send the review request (the only action that can clear it)
 
-Kholo: **https://safebrowsing.google.com/safebrowsing/report_error/?hl=en**
+Report endpoint: **https://safebrowsing.google.com/safebrowsing/report_error/?hl=en**
 
-"URL" field mein daalo:
+Use the **host root**, not just this path — that is where the verdict lives:
 
 ```
-https://ronit2405.github.io/Day-matrix-tracker/
+https://ronit2405.github.io/
 ```
 
-Comments field mein ye paste kar do (English mein best kaam karta hai):
+Paste this (adjust the takedown sentence to what you actually do):
 
 ```
 Hello Safe Browsing team,
 
-https://ronit2405.github.io/Day-matrix-tracker/ is blocked by Chrome with a phishing
-warning, but this page contains no phishing, no malware and no deceptive content.
+Querying https://transparencyreport.google.com/transparencyreport/api/v3/safebrowsing/status?site=ronit2405.github.io
+returns code 3 ("some pages on this site are unsafe") with the deceptive-content flag set
+and the malware flag clear. The warning is therefore on the host ronit2405.github.io,
+which is a GitHub Pages host shared by my portfolio demo projects.
 
-It is a single static HTML file: a personal day-planner where a visitor types what they
-did in each 30-minute slot and marks it Urgent (Y/N) and Important (Y/N). It has:
-- no login, no signup, no password field, no OTP, no payment field, no forms
-- no external scripts, no CDN, no fonts, no analytics, no tracking, no iframes
-- no redirects and no downloads
-- all data stored only in the visitor's own browser (localStorage)
+I have audited every page published under this host. The page I need working is
+https://ronit2405.github.io/Day-matrix-tracker/ - a single static HTML file, a personal
+day planner. It has:
+- no login, signup, password field, OTP, payment or card field, and no <form> at all
+- no external scripts, CDN, fonts, analytics, trackers or iframes (zero network requests)
+- no redirects, no downloads, no geolocation or other permission requests
+- a strict CSP: default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';
+  img-src data:; base-uri 'none'; form-action 'none'
+- all data stored only in the visitor's own browser (localStorage key dmt_v1)
 
-The host ronit2405.github.io is shared by my other GitHub Pages project demos, so the
-finding is on the host level, not on this page. I have audited every page published under
-this host and taken down / disabled the pages that could be misread as deceptive
-(a calculator-disguised emergency-alert demo and a portfolio page listing demo logins).
+I have unpublished the pages under this host that could reasonably be read as deceptive,
+in particular the two "Silent SOS" demo pages, which used a calculator interface to hide an
+emergency-alert screen and asked for the visitor's location. They are no longer served.
 
 Please re-review https://ronit2405.github.io/ and remove the warning. Thank you.
 ```
 
-> Sirf **ek** request bhejo. Baar-baar bhejne se review slow ho jata hai.
+Send **one** request. Repeated submissions slow the review down.
 
-### Step B · Google Search Console se verify + review (optional, par sabse strong)
+### Step B — Find the exact flagged URL (Search Console)
 
-Ye route zyada reliably kaam karta hai, aur aapko **exact flagged URL** bhi dikha deta hai.
+This is the only way to learn *which* URL Google flagged, and its "Request review" route usually resolves faster than the anonymous report.
 
-1. Kholo **https://search.google.com/search-console** → *Add property* → **URL prefix** → `https://ronit2405.github.io/Day-matrix-tracker/`
-   *(`ronit2405.github.io` root ko verify nahi kar sakte — GitHub Pages par root par aapki file rehti hi nahi. Path-prefix property se chalta hai.)*
-2. Verification method: **HTML file**. Google ek naam degi jaise `google1a2b3c4d5e6f.html`.
-   → Woh file is repo ke root mein daal ke push kar do (usme bas ek line hoti hai). Agar aap chaho to mujhe filename bata do, main add kar deta hoon.
-3. Verify hone ke baad: **Security & Manual actions → Security issues**. Wahan Google exact URL(s) list karega jo flagged hain — **yahi aapka culprit hai**.
-4. Us page ko hatao/fix karo, phir **Request review** dabao.
-5. Bonus: **Indexing → Sitemaps** mein `sitemap.xml` submit kar do (repo mein already hai). Isse Google ko site "real, owned, documented" lagti hai.
+1. **https://search.google.com/search-console** → *Add property* → **URL prefix** → `https://ronit2405.github.io/Day-matrix-tracker/`. (A domain property for `github.io` is impossible — you do not control its DNS. A path prefix works.)
+2. Verify with the **HTML file** method (Google gives you e.g. `google1a2b3c4d5e6f.html`; drop it in this repo's root and push — Pages re-serves it within a minute).
+3. **Security & Manual actions → Security issues.** The flagged URL(s) are listed there.
+4. Fix/unpublish that page, then press **Request review**.
+5. **Indexing → Sitemaps** → submit `sitemap.xml` (already present, absolute URLs already correct). It helps Google re-crawl this site as a real, documented property.
 
-### Step C · Culprit page offline karo
+### Step C — Remove the likely culprit from the host (do this *before* Step A)
 
-GitHub par, jis repo ka page deceptive lag sakta hai:
+- Repo → **Settings → Pages** → Source: **None** for `silent-sos-app` and `silent-sos-single-file`.
+- Same for anything else with a disguised or login-like UI.
+- If you want to re-publish the SOS demos later, put an unmissable banner *above* the calculator on first paint — a hidden UI is precisely what a deceptive-content classifier is trained to flag.
+- For URLs you deleted: Search Console → **Removals → New request**.
 
-- **Repo → Settings → Pages → Source: None** (Pages unpublish) — warning ke dauraan ye sabse safe, aur 100% reversible hai.
-- Ya **repo → Settings → General → Change visibility → Private** (public Pages bhi band ho jayega).
-- Purane deleted URL ke liye: Search Console → **Removals → New request**.
+### Step D — A working link while you wait
 
-Meri salah: review chalne tak `silent-sos-app` aur `silent-sos-single-file` ke Pages band kar do. Clear hone ke baad wapas on kar sakte ho — bas beginning mein ek clear banner daal dena: *"Ye ek demo/portfolio project hai, calculator disguise ek safety feature hai"* — deceptive-UI classifier ke liye transparency help karti hai.
+Review takes ~1–3 days, sometimes longer.
 
-### Step D · Tab tak app ko kaam karta hua link do
+- **Netlify Drop** (no account): https://app.netlify.com/drop → drag this folder → instant `https://<random>.netlify.app`. `netlify.toml` in this repo already sets sensible security headers.
+- Cloudflare Pages / Vercel also work: no build command, output directory `.`.
+- `localStorage` is per-origin: take a backup on the old link (*Help & data → Show backup*) and *Restore from text* on the new one.
 
-Review mein 24–72 ghante (kabhi 1–2 hafte) lag sakte hain. Tab tak isi app ko doosre host par chala lo — naya hostname = koi purana verdict nahi:
+### Step E — Confirm it cleared
 
-- **Netlify Drop** (sabse fast, no account needed): https://app.netlify.com/drop → is folder ko drag karo → `https://<random>.netlify.app` turant live.
-- **Cloudflare Pages** ya **Vercel**: repo connect karo, build command khali chhodo, output directory `.` (repo mein `netlify.toml` already ready hai).
+Re-query the endpoint until it returns `1`:
 
-Dhyan rakho: `localStorage` origin-specific hota hai, to naye link par data fresh start hoga. Purane link se backup (Help & data → Show backup) nikaal ke naye link par Restore kar sakte ho.
+```
+https://transparencyreport.google.com/transparencyreport/api/v3/safebrowsing/status?site=ronit2405.github.io
+```
 
-### Step E · Clear hone ke baad
-
-- 24–72 ghante baad `chrome://safe-browsing` … nahi, ye check karo:
-  `https://transparencyreport.google.com/safe-browsing/search?url=ronit2405.github.io` → code `1` aana chahiye.
-- Chrome cached warning dikha sakta hai: site ko Incognito mein ya cache clear karke kholo.
-- `2` ya `3` hi reh raha ho aur aapne Step A/B kar diya hai, to GitHub Support ko ticket daalo (repo + screenshot + "no unsafe content" confirmation).
+Chrome may keep showing a cached interstitial — retest in Incognito or after clearing cached files. Still `3` after your Step A/B request and 5+ days? Open a GitHub Support ticket with the repo link and a screenshot.
 
 ---
 
-## 5. Is repo mein maine kya add kiya (aur kyun)
+## 6. Separate problem found: the GitHub Pages URL currently 404s
 
-Warning ka root cause code nahi hai, par Safe Browsing ke crawler aur human reviewer dono ke liye site ko "obviously legit, self-documented" dikhana useful hai:
+While verifying the live site (11 Nov 2026), `https://ronit2405.github.io/Day-matrix-tracker/` returned, for `/`, `/index.html`, `/about.html`, `/robots.txt` and `/404.html` alike:
 
-| File | Kaam |
+> **"There isn't a GitHub Pages site here."**
+
+Facts:
+
+- Pages settings read back healthy over the API: `status=built`, source `main` / `/`, `https_enforced=true`, custom 404 on.
+- The build that ran after the last commit to `main` **succeeded** (build → report-build-status → deploy all green), and the deployment's `environment_url` is exactly that URL.
+- The repository contents are intact at `main` (9 files at root), and the `github-pages` environment's only protection rule is a branch policy on `main`.
+- The sibling project `myResumeDemo` (same host, same account, same Pages setup) **does** serve, so the host itself resolves — it is this project's origin that is not being served.
+- GitHub status at check time: all systems operational.
+
+So the failure is not in this repo's files: either the deployment has not been promoted/served at the edge for this path, or the Pages site needs to be re-saved. Try, in order:
+
+1. **Settings → Pages** → re-select *Deploy from a branch* → `main` / `/` → **Save** (this re-publishes and often clears a stuck deployment).
+2. Push any commit to `main` to trigger a fresh `pages build and deployment` run, then watch **Actions → pages-build-deployment** through the `deploy` job.
+3. If it still 404s while `myResumeDemo` serves, open a **GitHub Support** ticket naming both URLs — that is a server-side Pages problem on their end, not something a code change can fix.
+
+Note: with that URL currently down, a Safe Browsing reviewer has nothing to review. Restore the live URL **first**, then send the Section 5 request.
+
+---
+
+## 7. Honest expectations
+
+| Action | Effect on warning |
 |---|---|
-| `about.html` | Plain-language "ye app kya hai / data kahan jata hai / kaun banata hai" — trust signal + reviewer ke liye page |
-| `index.html` | `meta description`, canonical, referrer policy, **strict CSP** (koi external resource load hi nahi ho sakta), data-URI favicon, footer mein About/privacy link |
-| `robots.txt` + `sitemap.xml` | Search Console submit karne ke liye, crawler ko site ka structure clear |
-| `404.html` | Google ka soft-404 spam signal avoid karne ke liye |
-| `.nojekyll` | GitHub Pages ko Jekyll processing skip karne ke liye (files exactly waise serve hon) |
-| `netlify.toml` | Step D ke liye ready deploy config |
+| Editing `index.html` (any amount) | **None** — verdict is host-level and flag is deceptive-content |
+| The hardening in section 4 | **None** for the warning; genuinely removes an injection/brittleness risk |
+| Unpublishing the disguised "Silent SOS" pages | Removes the most likely trigger — required for a clean re-review |
+| Safe Browsing report (Step A) + Search Console review (Step B) | **This is what clears it.** ~1–3 days after the trigger is gone |
+| Moving to Netlify/Cloudflare | New hostname, no inherited verdict — immediate working link |
 
----
-
-## 6. Sach-sach expectation
-
-Ye doc code fix nahi hai — kyunki code mein kuch galat nahi tha. Warning **Google ke side** ki hai, aur usko sirf **Google hi hata sakta hai** (Step A/B). Step C uski wajah hataata hai, Step D aapko turant kaam karta link deta hai.
-
-Realistic: report + culprit page offline → **1 se 3 din** mein warning chali jaati hai. Agar 5 din baad bhi `3` hi hai, to Step B ka Search Console route use karo — wahan se aapko exact flagged URL dikhega aur aap "Request review" bhej sakte ho.
+There is no button, header, `robots.txt` line or code change that can remove a Google Safe Browsing interstitial. Anyone who tells you otherwise is guessing.

@@ -62,7 +62,13 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;',
 const pc=v=>Math.round(v)+'%';
 function mk(n){return{id:'d'+Date.now()+Math.random().toString(36).slice(2,5),name:'Day '+n,date:new Date().toISOString().slice(0,10),slots:{},happy:null,rating:0,why:''}}
 function fresh(){const d=mk(1);return{days:[d],cur:d.id,theme:''}}
-function load(){try{const r=localStorage.getItem(K);if(r){const d=JSON.parse(r);if(d&&Array.isArray(d.days)&&d.days.length)return d}}catch(e){}return fresh()}
+const yn=v=>v==='Y'||v==='N'?v:'';
+function day(d,i){if(!d||typeof d!=='object')d={};const o={id:typeof d.id==='string'&&d.id?d.id:'d'+i,name:typeof d.name==='string'?d.name:'Day '+(i+1),date:typeof d.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d.date)?d.date:new Date().toISOString().slice(0,10),slots:{},happy:d.happy===true?true:d.happy===false?false:null,rating:Number.isFinite(+d.rating)?Math.min(10,Math.max(0,Math.round(+d.rating))):0,why:typeof d.why==='string'?d.why:''};
+if(d.slots&&typeof d.slots==='object'){for(const k in d.slots){const s=d.slots[k]||{},u=yn(s.u),n=yn(s.i);if(!/^\d{1,2}$/.test(k)||+k>47)continue;if(u||n||typeof s.t==='string')o.slots[k]={t:typeof s.t==='string'?s.t:'',u:u,i:n}}}
+return o}
+function norm(d){if(!d||!Array.isArray(d.days)||!d.days.length)return null;const days=d.days.map(day);const seen=new Set();days.forEach((x,i)=>{while(seen.has(x.id))x.id=x.id+'-'+i;seen.add(x.id)});
+const s={days,cur:days.find(x=>x.id===d.cur)?d.cur:days[0].id,theme:['light','dark'].includes(d.theme)?d.theme:''};return s}
+function load(){try{const r=localStorage.getItem(K);if(r){const d=norm(JSON.parse(r));if(d)return d}}catch(e){}return fresh()}
 let S=load(),tab='day';
 function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
 const cur=()=>S.days.find(d=>d.id===S.cur)||S.days[0];
@@ -81,7 +87,7 @@ function renderDay(){
 const d=cur();let rows='';
 for(let i=0;i<48;i++){const s=d.slots[i]||{},op=v=>['','Y','N'].map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('');
 rows+=`<tr data-i="${i}"><td><input type="checkbox" class="sel" aria-label="Select ${label(i)}"></td><td>${label(i)}</td><td><input class="task" value="${esc(s.t)}" placeholder="What did you do?"></td><td><select class="u" aria-label="Urgent">${op(s.u)}</select></td><td><select class="i" aria-label="Important">${op(s.i)}</select></td><td class="c"></td></tr>`}
-$('#main').innerHTML=`<div class="card bar"><select id="dsel" aria-label="Choose day">${S.days.map(x=>`<option value="${x.id}" ${x.id===d.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select><input id="dname" value="${esc(d.name)}" aria-label="Day name" size="12"><input type="date" id="ddate" value="${d.date}" aria-label="Date"><button id="add" class="pri">Add day</button><button id="del" class="dg">Delete day</button></div>
+$('#main').innerHTML=`<div class="card bar"><select id="dsel" aria-label="Choose day">${S.days.map(x=>`<option value="${esc(x.id)}" ${x.id===d.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select><input id="dname" value="${esc(d.name)}" aria-label="Day name" size="12"><input type="date" id="ddate" value="${d.date}" aria-label="Date"><button id="add" class="pri">Add day</button><button id="del" class="dg">Delete day</button></div>
 <div class="grid"><section class="card"><div class="bulk"><span>For selected rows:</span><button data-k="u" data-v="Y">Urgent Y</button><button data-k="u" data-v="N">Urgent N</button><button data-k="i" data-v="Y">Important Y</button><button data-k="i" data-v="N">Important N</button><button data-k="x">Clear Y/N</button></div>
 <div class="tw"><table><thead><tr><th><input type="checkbox" id="all" aria-label="Select all"></th><th>Time</th><th>Task</th><th>Urgent?</th><th>Important?</th><th>Type</th></tr></thead><tbody id="tb">${rows}</tbody></table></div></section>
 <aside><div id="dstats"></div><div class="card"><h3>How did the day go?</h3><div class="hb"><button data-h="1">Happy</button><button data-h="0">Not happy</button></div>
@@ -122,7 +128,7 @@ return`<div class="card note"><h3>Your best mix</h3><p>${t}</p>${a}<p class="mu"
 
 function renderAll(){const s=stats(S.days),ds=S.days.filter(d=>stats([d]).n>0),hp=S.days.filter(d=>d.happy===true).length,un=S.days.filter(d=>d.happy===false).length;
 const cols=ds.map(d=>{const p=stats([d]).p;return`<div class="col"><div class="stk" title="${esc(d.name)}">${KS.map(k=>`<div style="height:${p[k]}%;background:var(--${k.toLowerCase()})"></div>`).join('')}</div><span>${d.happy===true?'🙂':d.happy===false?'🙁':'·'}</span><span class="mu">${esc(d.name).slice(0,7)}</span></div>`}).join('');
-const rows=S.days.map(d=>{const x=stats([d]);return`<tr class="go" data-id="${d.id}"><td>${esc(d.name)}</td><td>${d.date}</td><td>${x.h}</td>${KS.map(k=>`<td>${pc(x.p[k])}</td>`).join('')}<td>${d.happy===true?'Happy':d.happy===false?'Not happy':'-'}</td><td>${d.rating||'-'}</td></tr>`}).join('');
+const rows=S.days.map(d=>{const x=stats([d]);return`<tr class="go" data-id="${esc(d.id)}"><td>${esc(d.name)}</td><td>${esc(d.date)}</td><td>${x.h}</td>${KS.map(k=>`<td>${pc(x.p[k])}</td>`).join('')}<td>${d.happy===true?'Happy':d.happy===false?'Not happy':'-'}</td><td>${d.rating||'-'}</td></tr>`}).join('');
 $('#main').innerHTML=`<div class="grid"><div><div class="card"><h3>All days combined</h3>${matrix(s.p)}<div class="kpi"><div><b>${S.days.length}</b><span>days</span></div><div><b>${s.h}</b><span>hours recorded</span></div><div><b>${hp}/${un}</b><span>happy / not happy</span></div></div></div>
 <div class="card"><h3>Distribution</h3>${bar('Urgent: Yes',s.uy)}${bar('Urgent: No',s.n?100-s.uy:0)}${bar('Important: Yes',s.ui)}${bar('Important: No',s.n?100-s.ui:0)}</div></div>
 <div>${insightHTML()}</div></div>
@@ -139,7 +145,7 @@ function renderHelp(){$('#main').innerHTML=`<div class="card"><h3>How it works</
 const m=t=>$('#msg').textContent=t;
 $('#bk').onclick=()=>{$('#bt').value=JSON.stringify(S);m('Is text ko kahin safe save kar lo.')};
 $('#cp').onclick=async()=>{const t=$('#bt');if(!t.value)t.value=JSON.stringify(S);try{await navigator.clipboard.writeText(t.value);m('Copied.')}catch(e){t.select();m('Text select ho gaya, ab copy karo.')}};
-$('#rs').onclick=()=>{try{const d=JSON.parse($('#bt').value);if(!d||!Array.isArray(d.days)||!d.days.length)throw 0;S=d;if(!S.days.find(x=>x.id===S.cur))S.cur=S.days[0].id;save();m('Restored '+S.days.length+' days.')}catch(e){m('Ye valid backup text nahi hai.')}};
+$('#rs').onclick=()=>{try{const d=norm(JSON.parse($('#bt').value));if(!d)throw 0;S=d;save();show();m('Restored '+S.days.length+' days.')}catch(e){m('Ye valid backup text nahi hai.')}};
 $('#th').onclick=()=>{S.theme=S.theme===''?'light':S.theme==='light'?'dark':'';save();show()};
 $('#rst').onclick=function(){sure(this,()=>{S=fresh();save();tab='day';show()},'Tap again to erase all')}}
 show();

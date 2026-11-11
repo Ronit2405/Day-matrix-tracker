@@ -30,6 +30,16 @@ python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
-## Note
+## Safety / privacy (verified 11 Nov 2026)
 
-Agar Chrome is site par "Dangerous site / phishing" warning dikhata hai, to wajah is repo ka code nahi hai — Google Safe Browsing ka `ronit2405.github.io` host-level verdict hai, jo GitHub Pages ke shared host ki reputation se aata hai. Poora diagnosis aur fix steps: [`FIX-BROWSER-WARNING.md`](FIX-BROWSER-WARNING.md).
+- `index.html`, `about.html`, `404.html` mein **koi external request nahi** — na script, na CDN, na font, na analytics, na iframe.
+- **Koi `<form>` nahi**, koi password / email / OTP / payment / card / file input nahi.
+- `eval` / `atob` / obfuscated JS: **nahi**. Redirect, download, geolocation: **nahi**.
+- Strict CSP (`default-src 'none'`) — page bahar se kuch load ya POST hi nahi kar sakta.
+- Data sirf `localStorage` (key `dmt_v1`). Restore/load par data validate + sanitize hota hai.
+
+## Warning ke baare mein
+
+Agar Chrome "Dangerous site / phishing" dikhata hai: maine check kiya — Google Safe Browsing endpoint `ronit2405.github.io` ke liye **code `3`** ("some pages on this site are unsafe") return karta hai, iss path ke liye bhi wahi. Yani verdict **host-level** hai, is app ka nahi, aur **sirf Google hi review ke baad hata sakta hai**. Poora verified diagnosis, evidence table, ready-to-send report text aur step-by-step plan: [`FIX-BROWSER-WARNING.md`](FIX-BROWSER-WARNING.md).
+
+**Alag dhyan dene wali baat:** is waqt `https://ronit2405.github.io/Day-matrix-tracker/` khud "There isn't a GitHub Pages site here" de raha hai (build green hone ke bawajood). Live URL pehle theek karo, phir review request bhejo — detail `FIX-BROWSER-WARNING.md` section 6 mein.

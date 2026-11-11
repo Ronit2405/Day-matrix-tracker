@@ -62,5 +62,18 @@ Wahan aap khud verify kar sakte ho ki page mein sirf HTML, CSS aur ek chhota inl
 <p>Agar aapke browser ne is site par koi warning dikhayi hai, to bina dar ke <a href="https://safebrowsing.google.com/safebrowsing/report_error/?hl=en" rel="noopener">Google ko report</a> kar sakte ho, ya <a href="https://github.com/Ronit2405/Day-matrix-tracker/issues" rel="noopener">GitHub par issue</a> khol sakte ho. Aap source khud padh sakte ho — page mein aisa kuch nahi hai jo aapka data maange ya kisi aur site par bheje.</p>
 </div>
 
+<div class="card">
+<h2>Page par kya technical restrictions hain</h2>
+<p>Kisi bhi reviewer ke liye, jo bhi is page ke andar chal sakta hai:</p>
+<ul>
+<li>Content-Security-Policy: <code>default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'</code></li>
+<li>Iska matlab: page koi external file load nahi kar sakta, koi request bhej nahi sakta, aur koi form submit nahi kar sakta. Sirf ek inline script aur inline CSS chalta hai.</li>
+<li>Koi <code>&lt;form&gt;</code> element nahi. Koi password, email, phone, OTP, payment ya card field nahi.</li>
+<li>Koi geolocation, camera, microphone ya clipboard-read permission nahi maangi jaati. Clipboard sirf tab likha jata hai jab aap khud "Copy" dabate ho.</li>
+<li>No <code>eval</code>, no <code>atob</code>, no obfuscated code, no redirect, no download.</li>
+<li>Restore ki gayi backup text aur <code>localStorage</code> data dono validate aur sanitize hote hain — galat shape ka data render nahi hota.</li>
+</ul>
+</div>
+
 <a class="back" href="./">App kholo &rarr;</a>
 </div></body></html>
