@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Day Matrix Tracker</title>
+<style>
+:root{--bg:#f2f3ee;--card:#fff;--tx:#1c2420;--mu:#68716c;--bd:#dde1da;--ac:#0f766e;--yy:#16a34a;--yn:#dc2626;--ny:#2563eb;--nn:#8b948f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1512;--card:#18201c;--tx:#e9efeb;--mu:#93a09a;--bd:#2a342f;--ac:#2dd4bf;--yy:#4ade80;--yn:#f87171;--ny:#60a5fa;--nn:#9aa5a0;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1512;--card:#18201c;--tx:#e9efeb;--mu:#93a09a;--bd:#2a342f;--ac:#2dd4bf;--yy:#4ade80;--yn:#f87171;--ny:#60a5fa;--nn:#9aa5a0;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+h1,h3{font-family:Georgia,"Times New Roman",serif;margin:0}h1{font-size:1.5rem}h3{font-size:1.05rem;margin-bottom:10px}
+.wrap{max-width:1100px;margin:0 auto;padding:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+nav{display:flex;gap:4px;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:3px}
+.tab{border:0;background:none;color:var(--mu);padding:7px 14px;border-radius:8px;font:inherit;cursor:pointer}
+.tab.on{background:var(--ac);color:#fff}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:12px}
+.mu{color:var(--mu)}.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grid{display:grid;gap:12px;grid-template-columns:1fr}@media(min-width:900px){.grid{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}}
+input,select,textarea,button{font:inherit;color:var(--tx)}
+input,select,textarea{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:7px 9px;min-width:0}
+textarea{width:100%;resize:vertical}
+button{border:1px solid var(--bd);background:var(--card);border-radius:8px;padding:7px 12px;cursor:pointer}
+button.pri{background:var(--ac);border-color:var(--ac);color:#fff}button.dg{color:var(--yn)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+.bulk{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:10px}.bulk span{font-size:13px;color:var(--mu)}
+.tw{max-height:68vh;overflow:auto;border:1px solid var(--bd);border-radius:8px}
+table{border-collapse:collapse;width:100%;min-width:520px}th,td{padding:4px 6px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+th{position:sticky;top:0;background:var(--card);font-size:13px;z-index:1}
+td input.task{width:100%;min-width:150px}td select{width:64px}
+.cl{font-weight:700;font-size:12px;padding:2px 7px;border-radius:6px;color:#fff}
+.mx{display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;align-items:stretch}
+.mc{border-radius:10px;padding:14px 8px;text-align:center;background:color-mix(in srgb,var(--c) 16%,var(--card));border:2px solid var(--c)}
+.mc b{display:block;font-size:1.7rem;font-family:Georgia,serif}.mc small{color:var(--mu);font-size:12px}
+.ax{font-size:12px;color:var(--mu);display:flex;align-items:center;justify-content:center;text-align:center}
+.kpi{display:flex;gap:20px;margin-top:12px}.kpi b{font-size:1.4rem;display:block;font-family:Georgia,serif}.kpi span{color:var(--mu);font-size:13px}
+.br{display:grid;grid-template-columns:96px 1fr 42px;gap:8px;align-items:center;margin:6px 0;font-size:13px}
+.br i{height:10px;background:var(--bg);border-radius:5px;overflow:hidden}.br u{display:block;height:100%;background:var(--ac)}.br b{text-align:right}
+.hb{display:flex;gap:8px;margin-bottom:10px}.hb button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+.chart{display:flex;gap:10px;align-items:flex-end;overflow-x:auto;padding-bottom:6px}
+.col{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:44px;font-size:12px}
+.stk{display:flex;flex-direction:column;width:34px;height:140px;border-radius:6px;overflow:hidden;background:var(--bg)}
+.stk div{width:100%}.lg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin-top:8px}.lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px}
+.tb{overflow-x:auto}.tb tr.go{cursor:pointer}.tb tr.go:hover{background:var(--bg)}
+.note{border-left:4px solid var(--ac);padding-left:12px}
+</style></head><body><div class="wrap">
+<header><h1>Day Matrix Tracker</h1><nav><button class="tab" data-t="day">Day</button><button class="tab" data-t="all">Overall</button><button class="tab" data-t="help">Help &amp; data</button></nav></header>
+<main id="main"></main></div>
+<script>
+const $=s=>document.querySelector(s),K='dmt_v1',KS=['YY','YN','NY','NN'];
+const NAMES={YY:'Urgent + Important',YN:'Urgent, not important',NY:'Important, not urgent',NN:'Neither'};
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pc=v=>Math.round(v)+'%';
+function mk(n){return{id:'d'+Date.now()+Math.random().toString(36).slice(2,5),name:'Day '+n,date:new Date().toISOString().slice(0,10),slots:{},happy:null,rating:0,why:''}}
+function fresh(){const d=mk(1);return{days:[d],cur:d.id,theme:''}}
+function load(){try{const r=localStorage.getItem(K);if(r){const d=JSON.parse(r);if(d&&Array.isArray(d.days)&&d.days.length)return d}}catch(e){}return fresh()}
+let S=load(),tab='day';
+function save(){try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}}
+const cur=()=>S.days.find(d=>d.id===S.cur)||S.days[0];
+function label(i){const m=(240+i*30)%1440;let h=Math.floor(m/60);const ap=h<12?'AM':'PM';h=h%12||12;return h+':'+String(m%60).padStart(2,'0')+' '+ap}
+function stats(days){const c={YY:0,YN:0,NY:0,NN:0};days.forEach(d=>{for(const k in d.slots){const s=d.slots[k];if(s.u&&s.i)c[s.u+s.i]++}});
+const n=c.YY+c.YN+c.NY+c.NN,p={};KS.forEach(k=>p[k]=n?c[k]/n*100:0);return{c,n,h:n/2,p,uy:p.YY+p.YN,ui:p.YY+p.NY}}
+function setSlot(i,k,v){const d=cur(),s=d.slots[i]||(d.slots[i]={});if(v)s[k]=v;else delete s[k];if(!s.t&&!s.u&&!s.i)delete d.slots[i]}
+const mcell=(k,p)=>`<div class="mc" style="--c:var(--${k.toLowerCase()})"><b>${pc(p[k])}</b><small>${NAMES[k]}</small></div>`;
+const matrix=p=>`<div class="mx"><span class="ax">Urgent<br>Yes</span>${mcell('YN',p)}${mcell('YY',p)}<span class="ax">Urgent<br>No</span>${mcell('NN',p)}${mcell('NY',p)}<span></span><span class="ax">Not important</span><span class="ax">Important</span></div>`;
+const bar=(l,v)=>`<div class="br"><span>${l}</span><i><u style="width:${v}%"></u></i><b>${pc(v)}</b></div>`;
+function show(){document.documentElement.dataset.theme=S.theme||'';document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));({day:renderDay,all:renderAll,help:renderHelp})[tab]()}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{tab=b.dataset.t;show()});
+const sure=(b,fn,txt)=>{if(b.dataset.arm){fn();return}b.dataset.arm=1;const o=b.textContent;b.textContent=txt||'Tap again to confirm';setTimeout(()=>{delete b.dataset.arm;b.textContent=o},4000)};
+
+function renderDay(){
+const d=cur();let rows='';
+for(let i=0;i<48;i++){const s=d.slots[i]||{},op=v=>['','Y','N'].map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('');
+rows+=`<tr data-i="${i}"><td><input type="checkbox" class="sel" aria-label="Select ${label(i)}"></td><td>${label(i)}</td><td><input class="task" value="${esc(s.t)}" placeholder="What did you do?"></td><td><select class="u" aria-label="Urgent">${op(s.u)}</select></td><td><select class="i" aria-label="Important">${op(s.i)}</select></td><td class="c"></td></tr>`}
+$('#main').innerHTML=`<div class="card bar"><select id="dsel" aria-label="Choose day">${S.days.map(x=>`<option value="${x.id}" ${x.id===d.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select><input id="dname" value="${esc(d.name)}" aria-label="Day name" size="12"><input type="date" id="ddate" value="${d.date}" aria-label="Date"><button id="add" class="pri">Add day</button><button id="del" class="dg">Delete day</button></div>
+<div class="grid"><section class="card"><div class="bulk"><span>For selected rows:</span><button data-k="u" data-v="Y">Urgent Y</button><button data-k="u" data-v="N">Urgent N</button><button data-k="i" data-v="Y">Important Y</button><button data-k="i" data-v="N">Important N</button><button data-k="x">Clear Y/N</button></div>
+<div class="tw"><table><thead><tr><th><input type="checkbox" id="all" aria-label="Select all"></th><th>Time</th><th>Task</th><th>Urgent?</th><th>Important?</th><th>Type</th></tr></thead><tbody id="tb">${rows}</tbody></table></div></section>
+<aside><div id="dstats"></div><div class="card"><h3>How did the day go?</h3><div class="hb"><button data-h="1">Happy</button><button data-h="0">Not happy</button></div>
+<label class="mu">Rating (1 to 10)</label> <select id="rate">${['',1,2,3,4,5,6,7,8,9,10].map(x=>`<option value="${x}" ${x==d.rating?'selected':''}>${x||'-'}</option>`).join('')}</select>
+<p class="mu" style="margin:10px 0 4px">Why do you feel this way? (optional)</p><textarea id="why" rows="3">${esc(d.why)}</textarea></div></aside></div>`;
+const tb=$('#tb');tb.querySelectorAll('tr').forEach(rowUpd);dayStats();happyUI();
+$('#dsel').onchange=e=>{S.cur=e.target.value;save();show()};
+$('#dname').oninput=e=>{d.name=e.target.value||'Day';$('#dsel').selectedOptions[0].textContent=d.name;save()};
+$('#ddate').onchange=e=>{d.date=e.target.value;save()};
+$('#add').onclick=()=>{const n=mk(S.days.length+1);S.days.push(n);S.cur=n.id;save();show()};
+$('#del').onclick=function(){sure(this,()=>{if(S.days.length>1){S.days=S.days.filter(x=>x.id!==d.id);S.cur=S.days[0].id}else{S.days=[mk(1)];S.cur=S.days[0].id}save();show()},'Tap again to delete')};
+tb.addEventListener('input',e=>{if(e.target.classList.contains('task')){setSlot(e.target.closest('tr').dataset.i,'t',e.target.value);save()}});
+tb.addEventListener('change',e=>{const t=e.target;if(t.tagName==='SELECT'){const tr=t.closest('tr');setSlot(tr.dataset.i,t.className,t.value);rowUpd(tr);dayStats();save()}});
+$('#all').onchange=e=>tb.querySelectorAll('.sel').forEach(c=>c.checked=e.target.checked);
+document.querySelectorAll('.bulk button').forEach(b=>b.onclick=()=>{tb.querySelectorAll('tr').forEach(tr=>{if(!tr.querySelector('.sel').checked)return;const i=tr.dataset.i;
+if(b.dataset.k==='x'){setSlot(i,'u','');setSlot(i,'i','');tr.querySelector('.u').value='';tr.querySelector('.i').value=''}else{setSlot(i,b.dataset.k,b.dataset.v);tr.querySelector('.'+b.dataset.k).value=b.dataset.v}rowUpd(tr)});dayStats();save()});
+document.querySelectorAll('[data-h]').forEach(b=>b.onclick=()=>{const v=b.dataset.h==='1';d.happy=d.happy===v?null:v;happyUI();save()});
+$('#rate').onchange=e=>{d.rating=+e.target.value||0;save()};$('#why').oninput=e=>{d.why=e.target.value;save()};}
+function rowUpd(tr){const u=tr.querySelector('.u').value,i=tr.querySelector('.i').value,c=tr.querySelector('.c');
+if(u&&i){const k=u+i;c.innerHTML=`<span class="cl" style="background:var(--${k.toLowerCase()})">${k}</span>`}else c.innerHTML=''}
+function happyUI(){const d=cur();document.querySelectorAll('[data-h]').forEach(b=>b.classList.toggle('on',d.happy!==null&&(b.dataset.h==='1')===d.happy))}
+function dayStats(){const s=stats([cur()]);$('#dstats').innerHTML=`<div class="card"><h3>Priority matrix</h3>${matrix(s.p)}<div class="kpi"><div><b>${s.h}</b><span>hours recorded</span></div><div><b>${s.n}</b><span>slots filled</span></div></div></div>
+<div class="card"><h3>Tasks distribution</h3>${bar('Urgent: Yes',s.uy)}${bar('Urgent: No',s.n?100-s.uy:0)}${bar('Important: Yes',s.ui)}${bar('Important: No',s.n?100-s.ui:0)}</div>`}
+
+function insight(){const ds=S.days.filter(d=>stats([d]).n>0),H=ds.filter(d=>d.happy===true),U=ds.filter(d=>d.happy===false);
+if(H.length<2)return{ok:false,msg:'Best mix unlock karne ke liye kam se kam 2 din bharo jinhe aapne Happy mark kiya ho. Abhi Happy days: '+H.length+'.'};
+const avg=a=>{const o={YY:0,YN:0,NY:0,NN:0};a.forEach(d=>{const p=stats([d]).p;KS.forEach(k=>o[k]+=p[k]/a.length)});return o};
+return{ok:true,h:avg(H),u:U.length?avg(U):null,H:H.length,U:U.length}}
+function insightHTML(){const I=insight();if(!I.ok)return`<div class="card"><h3>Your best mix</h3><p class="mu">${I.msg}</p></div>`;
+const top=KS.reduce((a,k)=>I.h[k]>I.h[a]?k:a,'YY');let t=`Aapke ${I.H} happy dino mein sabse zyada samay <b>${NAMES[top]}</b> kaam mein gaya (${pc(I.h[top])}).`;
+if(I.u){const g=KS.reduce((a,k)=>(I.h[k]-I.u[k])>(I.h[a]-I.u[a])?k:a,'YY');if(I.h[g]-I.u[g]>=5)t+=` Not-happy dino ke muqable happy dino mein <b>${NAMES[g]}</b> kaam ${pc(I.h[g]-I.u[g])} zyada tha.`}
+else t+=' Not-happy din mark karo to comparison bhi milega.';
+const s=stats([cur()]);let a;
+if(s.n){const sc=100-KS.reduce((x,k)=>x+Math.abs(s.p[k]-I.h[k]),0)/2,m=KS.reduce((x,k)=>(I.h[k]-s.p[k])>(I.h[x]-s.p[x])?k:x,'YY');
+a=`<p>${esc(cur().name)} ka mix aapke best mix se <b>${pc(sc)}</b> match karta hai.${I.h[m]-s.p[m]>5?` Aur zyada <b>${NAMES[m]}</b> kaam try karo.`:' Bahut badhiya!'}</p>`}
+else a='<p class="mu">Current day ka data bharo, phir best mix se match yahan dikhega.</p>';
+return`<div class="card note"><h3>Your best mix</h3><p>${t}</p>${a}<p class="mu" style="font-size:13px">Ye pattern hai, guarantee nahi. Jitne zyada din, utna accurate.</p></div><div class="card"><h3>Target mix (average of happy days)</h3>${matrix(I.h)}</div>`}
+
+function renderAll(){const s=stats(S.days),ds=S.days.filter(d=>stats([d]).n>0),hp=S.days.filter(d=>d.happy===true).length,un=S.days.filter(d=>d.happy===false).length;
+const cols=ds.map(d=>{const p=stats([d]).p;return`<div class="col"><div class="stk" title="${esc(d.name)}">${KS.map(k=>`<div style="height:${p[k]}%;background:var(--${k.toLowerCase()})"></div>`).join('')}</div><span>${d.happy===true?'🙂':d.happy===false?'🙁':'·'}</span><span class="mu">${esc(d.name).slice(0,7)}</span></div>`}).join('');
+const rows=S.days.map(d=>{const x=stats([d]);return`<tr class="go" data-id="${d.id}"><td>${esc(d.name)}</td><td>${d.date}</td><td>${x.h}</td>${KS.map(k=>`<td>${pc(x.p[k])}</td>`).join('')}<td>${d.happy===true?'Happy':d.happy===false?'Not happy':'-'}</td><td>${d.rating||'-'}</td></tr>`}).join('');
+$('#main').innerHTML=`<div class="grid"><div><div class="card"><h3>All days combined</h3>${matrix(s.p)}<div class="kpi"><div><b>${S.days.length}</b><span>days</span></div><div><b>${s.h}</b><span>hours recorded</span></div><div><b>${hp}/${un}</b><span>happy / not happy</span></div></div></div>
+<div class="card"><h3>Distribution</h3>${bar('Urgent: Yes',s.uy)}${bar('Urgent: No',s.n?100-s.uy:0)}${bar('Important: Yes',s.ui)}${bar('Important: No',s.n?100-s.ui:0)}</div></div>
+<div>${insightHTML()}</div></div>
+<div class="card"><h3>Day by day mix</h3>${cols?`<div class="chart">${cols}</div><div class="lg">${KS.map(k=>`<span><i style="background:var(--${k.toLowerCase()})"></i>${NAMES[k]}</span>`).join('')}</div>`:'<p class="mu">Kisi din ke slots bharo, chart yahan dikhega.</p>'}</div>
+<div class="card tb"><h3>Compare days (tap a row to open)</h3><table><thead><tr><th>Day</th><th>Date</th><th>Hours</th><th>YY</th><th>YN</th><th>NY</th><th>NN</th><th>Mood</th><th>Rating</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+document.querySelectorAll('tr.go').forEach(r=>r.onclick=()=>{S.cur=r.dataset.id;save();tab='day';show()})}
+
+function renderHelp(){$('#main').innerHTML=`<div class="card"><h3>How it works</h3><p>Har din 30 minute ke slots mein likho ki kya kiya, aur usse <b>Urgent</b> (Y/N) aur <b>Important</b> (Y/N) mark karo. Definition aapki apni hai. Din ke end mein Happy ya Not happy choose karo.</p>
+<p><b>YY</b> = urgent + important, <b>YN</b> = urgent but not important, <b>NY</b> = important but not urgent, <b>NN</b> = neither. Matrix mein % sirf bhare hue slots ka hota hai.</p>
+<p>Jitne chaho utne din add karo. 2 ya zyada Happy days ke baad Overall tab mein aapka best mix dikhega. Tip: multiple rows tick karke ek saath Y/N set karo.</p></div>
+<div class="card"><h3>Your data</h3><p class="mu">Data sirf aapke is browser mein save hota hai. Browser data clear karoge to chala jayega, isliye backup rakho.</p>
+<div class="bar"><button id="bk" class="pri">Show backup</button><button id="cp">Copy</button><button id="rs">Restore from text</button><button id="th">Theme: ${S.theme||'auto'}</button><button id="rst" class="dg">Reset everything</button></div>
+<textarea id="bt" rows="6" placeholder="Backup text appears here. To restore, paste it here and press Restore." style="margin-top:10px"></textarea><p id="msg" class="mu"></p></div>`;
+const m=t=>$('#msg').textContent=t;
+$('#bk').onclick=()=>{$('#bt').value=JSON.stringify(S);m('Is text ko kahin safe save kar lo.')};
+$('#cp').onclick=async()=>{const t=$('#bt');if(!t.value)t.value=JSON.stringify(S);try{await navigator.clipboard.writeText(t.value);m('Copied.')}catch(e){t.select();m('Text select ho gaya, ab copy karo.')}};
+$('#rs').onclick=()=>{try{const d=JSON.parse($('#bt').value);if(!d||!Array.isArray(d.days)||!d.days.length)throw 0;S=d;if(!S.days.find(x=>x.id===S.cur))S.cur=S.days[0].id;save();m('Restored '+S.days.length+' days.')}catch(e){m('Ye valid backup text nahi hai.')}};
+$('#th').onclick=()=>{S.theme=S.theme===''?'light':S.theme==='light'?'dark':'';save();show()};
+$('#rst').onclick=function(){sure(this,()=>{S=fresh();save();tab='day';show()},'Tap again to erase all')}}
+show();
+</script></body></html>
