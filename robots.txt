@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ronit2405.github.io/Day-matrix-tracker/sitemap.xml

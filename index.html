@@ -2,6 +2,13 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Day Matrix Tracker</title>
+<meta name="description" content="Day Matrix Tracker — apne din ke 30-minute slots likho, har task ko Urgent/Important mark karo, aur Eisenhower matrix se apna best time mix samjho. Koi account nahi, koi tracking nahi; data sirf aapke browser mein rehta hai.">
+<meta name="author" content="Ronit Sundrani">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://ronit2405.github.io/Day-matrix-tracker/">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; base-uri 'none'; form-action 'none'">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230f766e'/%3E%3Ctext x='50' y='70' font-size='56' text-anchor='middle' fill='white' font-family='Georgia,serif'%3ED%3C/text%3E%3C/svg%3E">
 <style>
 :root{--bg:#f2f3ee;--card:#fff;--tx:#1c2420;--mu:#68716c;--bd:#dde1da;--ac:#0f766e;--yy:#16a34a;--yn:#dc2626;--ny:#2563eb;--nn:#8b948f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1512;--card:#18201c;--tx:#e9efeb;--mu:#93a09a;--bd:#2a342f;--ac:#2dd4bf;--yy:#4ade80;--yn:#f87171;--ny:#60a5fa;--nn:#9aa5a0;color-scheme:dark}}
@@ -43,9 +50,11 @@ td input.task{width:100%;min-width:150px}td select{width:64px}
 .stk div{width:100%}.lg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;margin-top:8px}.lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px}
 .tb{overflow-x:auto}.tb tr.go{cursor:pointer}.tb tr.go:hover{background:var(--bg)}
 .note{border-left:4px solid var(--ac);padding-left:12px}
+footer{display:flex;gap:14px;flex-wrap:wrap;align-items:center;justify-content:center;font-size:13px;color:var(--mu);padding:6px 0 18px;text-align:center}
+footer a{color:var(--ac)}
 </style></head><body><div class="wrap">
 <header><h1>Day Matrix Tracker</h1><nav><button class="tab" data-t="day">Day</button><button class="tab" data-t="all">Overall</button><button class="tab" data-t="help">Help &amp; data</button></nav></header>
-<main id="main"></main></div>
+<main id="main"></main><footer><span>Personal tracker · koi account nahi, koi analytics nahi, data sirf aapke browser mein</span><span aria-hidden="true">·</span><a href="about.html">About &amp; privacy</a></footer></div>
 <script>
 const $=s=>document.querySelector(s),K='dmt_v1',KS=['YY','YN','NY','NN'];
 const NAMES={YY:'Urgent + Important',YN:'Urgent, not important',NY:'Important, not urgent',NN:'Neither'};
